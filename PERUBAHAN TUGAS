@@ -1,0 +1,504 @@
+Tambahan Tugas
+1.	Penggunaan jenis navbar yang berbeda pada app.blade.php
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
+        <a class="navbar-brand" href="#">Laravel Pertama</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/">Home <span class="sr-only"></span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/friends">Friends</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/familys">Family</a>
+                </li>
+            </ul>
+            <form class="form-inline my-2 my-lg-0">
+            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
+    </nav>
+
+2.	Penggunaan jenis card yang berbeda pada index.blade.php
+<div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5 class="card-title">Nama : {{ $friend['nama'] }}</h5>
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">Nomor Telepon : {{ $friend['no_telp'] }}</li>
+            <li class="list-group-item">Alamat : {{ $friend['alamat'] }}</li>
+        </ul>
+        <div class="card-body">
+            <a href="#" class="card-link btn-warning">Edit Friends</a>
+            <a href="#" class="card-link btn-danger">Delete Friends</a>
+        </div>
+    </div>
+
+3.	Penambahan Models Familys
+Familys.php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Familys extends Model
+{
+    use HasFactory;
+    protected $guarded = ['last_name'];
+}
+
+
+4.	Penambahan Route Family pada web.php
+
+Route::resources([
+    'friends' => App\Http\Controllers\CobaController::class,
+    'familys' => App\Http\Controllers\FamilysController::class,
+    'groups' => App\Http\Controllers\GroupsController::class,
+]);
+
+5.	Pembuatan FamilyControler yang berisi index, create, store, show, edit, update, dan destroy
+FamilyControler.php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Familys;
+
+class FamilyController extends Controller
+{
+    /* public function index()
+    {
+        return 'test berhasil';
+    }
+
+    public function urutan($ke)
+    {
+// memanggil model firends
+        $friends = Friends::paginate(3);
+
+        return view('friend', compact('friends'));
+        // memakai compact karena memiliki banyak data array. di isi dengan nama variabel yang akan dipanggil
+    }
+
+    public function coba($ke)
+    {
+        return view('coba');
+        // sesuaikan dengan view yang ingin ditampilkan
+    }
+ */
+
+public function index(){
+        // memanggil model familys
+        $familys = Familys::orderBy('id', 'desc')->paginate(1);
+
+        return view('family.index', compact('familys'));
+        // memakai compact karena memiliki banyak data array. di isi dengan nama variabel yang akan dipanggil
+    }
+
+    public function create(){
+        return view('family.create');
+    }
+
+    public function store(Request $request){
+        // Validate the request...
+        $request->validate([
+            'first_name' => 'required|max:255|',
+            'last_name' => 'required|unique:familys|max:255|',
+            'number_phone' => 'required|numeric',
+            'address' => 'required',
+            'email' => 'required'
+
+        ]);
+
+        $familys = new Familys;
+
+        $familys->first_name = $request->first_name;
+        $familys->last_name = $request->last_name;
+        $familys->number_phone = $request->number_phone;
+        $familys->address = $request->address;
+        $familys->email = $request->email;
+
+        $familys->save();
+
+        return redirect('/familys');
+
+    }
+
+    public function show($id)
+    {
+        $familys = Familys::where('id', $id)->first();
+        // dd($familys);
+        return view('family.show', ['familys' => $familys]);
+    }
+
+    public function edit($id)
+    {
+        $familys = Familys::where('id', $id)->first();
+        // dd($familys);
+        return view('family.edit', ['familys' => $familys]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'first_name' => 'required|max:255|',
+            'last_name' => 'required|unique:familys|max:255|',
+            'number_phone' => 'required|numeric',
+            'address' => 'required',
+            'email' => 'required'
+        ]);
+
+        Familys::find($id)->update([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'number_phone' => $request->number_phone,
+            'address' => $request->address,
+            'email' => $request->email
+        ]);
+
+        return redirect('/familys');
+    }
+
+    public function destroy($id)
+    {
+        Familys::find($id)->delete();
+        return redirect('/familys');
+
+    }
+}
+
+6.	Penambahan View Index Family
+index.blade.php
+@extends('layouts.app')
+
+@section('title', 'Family')
+<!-- section key, value karena section ini bukan diambil dari file tetapi dari key-->
+
+@section('content')
+    <a href="/familys/tambah"><button class="card-link btn-primary">Add Family</button></a>
+<!-- karena angka yang kita gunakan adalah array dalam array sehingga memerlukan perulangan berupa foreach -->
+@foreach ($familys as $family)
+    <div class="card border-dark mb-3" style="max-width: 20rem;">
+        <div class="card-header bg-dark text-light">
+                <b>MY FAMILY</b>
+            </div>
+        <div class="card-body bg-dark p-2 text-dark bg-opacity-10">
+            <a href="/familys/{{$familys['id']}}" class="card-title">Name : {{ $family['first_name'] }} {{ $family['last_name'] }}</a>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">Number Phone : {{ $family['number_phone'] }}</li>
+                <li class="list-group-item">Address : {{ $family['address'] }}</li>
+                <li class="list-group-item">Email : {{ $family['email'] }}</li>
+            </ul>
+            <div class="card-body">
+                <a href="/familys/{{$familys['id']}}/edit"><button class="card-link btn-warning">Edit Family</button></a>
+                <form action="/familys/{{$familys['id']}}" method="POST">
+                @csrf
+                @method('DELETE')
+                <button class="card-link btn-danger">Delete Family</button>
+                </form>
+            </div>
+        </div>
+    </div>
+@endforeach
+    <div>
+    {{ $familys->links() }}
+    </div>
+@endsection
+<!-- end section hanya ditulis sekali aja di paling akhir -->
+
+
+7.	Penambahan View Create Family
+create.blade.php
+@extends('layouts.app')
+
+@section('title', 'Create Family')
+<!-- section key, value karena section ini bukan diambil dari file tetapi dari key-->
+
+@section('content')
+
+    <form action="/familys" method="POST">
+        @csrf
+        <div class="form-row">
+            <div class="col-md-6 mb-3">
+                <label for="first_name">First Name</label>
+                <input type="text" class="form-control is-valid" id="first_name" name="first_name" aria-describedby="first_name" value="{{ old('first_name') }}" required>
+                @error('first_name')
+                <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+                <div id="first_nameFeedback" class="valid-feedback">
+                    Your Name Looks good!
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="last_name">Last name</label>
+                <input type="text" class="form-control is-valid" id="last_name" name="last_name" aria-describedby="last_name" value="{{ old('last_name') }}" required>
+                @error('last_name')
+                <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+                <div id="last_nameFeedback" class="valid-feedback">
+                    Your Name Looks good!
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-6 mb-3">
+            <label for="number_phone">Number Phone</label>
+            <input type="text" class="form-control is-invalid" id="number_phone" name="number_phone" aria-describedby="number_phone" value="{{ old('number_phone') }}" required>
+            @error('number_phone')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+            <div id="number_phoneFeedback" class="invalid-feedback">
+                Please provide a valid number.
+            </div>
+        </div>
+            <div class="form-row">
+            <div class="col-md-6 mb-3">
+            <label for="address">Address</label>
+            <input type="text" class="form-control is-invalid" id="address" name="address" aria-describedby="address" value="{{ old('address') }}" required>
+            @error('address')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+            <div id="addressFeedback" class="invalid-feedback">
+                Please provide a valid address.
+            </div>
+        </div>
+        </div>
+            <div class="form-row">
+            <div class="col-md-6 mb-3">
+            <label for="email">Email</label>
+            <input type="email" class="form-control is-invalid" id="email" name="email" aria-describedby="email" value="{{ old('email') }}" required>
+            @error('email')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+            <div id="emailFeedback" class="invalid-feedback">
+                Please provide a valid email address.
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="form-check">
+            <input class="form-check-input is-invalid" type="checkbox" value="" id="invalidCheck3" aria-describedby="invalidCheck3Feedback" required>
+            <label class="form-check-label" for="invalidCheck3">
+                Agree to terms and conditions
+            </label>
+            <div  id="invalidCheck3Feedback" class="invalid-feedback">
+                You must agree before submitting.
+            </div>
+            </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Submit form</button>
+    </form>
+
+@endsection
+<!-- end section hanya ditulis sekali aja di paling akhir -->
+
+8.	Penambahan View Show Family
+show.blade.php
+@extends('layouts.app')
+
+@section('title', 'Family')
+<!-- section key, value karena section ini bukan diambil dari file tetapi dari key-->
+
+@section('content')
+<!-- karena angka yang kita gunakan adalah array dalam array sehingga memerlukan perulangan berupa foreach -->
+    <div class="card border-dark mb-3" style="max-width: 30rem;">
+            <div class="card-header bg-dark text-light">
+                <b>Family Card</b>
+            </div>
+            <div class="card-body bg-dark p-2 text-dark bg-opacity-10">
+                <h5 class="card-title">First Name : {{ $familys['first_name'] }} {{ $familys['last_name'] }}</h5>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">Number Phone : {{ $familys['number_phone'] }}</li>
+                <li class="list-group-item">Address : {{ $familys['address'] }}</li>
+                <li class="list-group-item">Email : {{ $familys['email'] }}</li>
+            </ul>
+            </div>
+    </div>
+
+@endsection
+<!-- end section hanya ditulis sekali aja di paling akhir -->
+
+
+9.	Penambahan View Edit Family
+edit.blade.php
+@extends('layouts.app')
+
+@section('title', 'Edit Family')
+<!-- section key, value karena section ini bukan diambil dari file tetapi dari key-->
+
+@section('content')
+
+    <form action="/familys/{{ $familys['id'] }}" method="POST">
+        @csrf
+        @method('PUT')
+        <div class="form-row">
+            <div class="col-md-6 mb-3">
+            <label for="first_name">First Name</label>
+            <input type="text" class="form-control is-valid" id="first_name" name="first_name" aria-describedby="first_name" value="{{ old('first_name') ? old('first_name') : $familys['first_name'] }}" required>
+            @error('first_name')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+            <div id="first_nameFeedback" class="valid-feedback">
+                Your Name Looks good!
+            </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-6 mb-3">
+            <label for="last_name">Last Name</label>
+            <input type="text" class="form-control is-valid" id="last_name" name="last_name" aria-describedby="last_name" value="{{ old('last_name') ? old('last_name') : $familys['last_name'] }}" required>
+            @error('last_name')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+            <div id="last_nameFeedback" class="valid-feedback">
+                Your Name Looks good!
+            </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-6 mb-3">
+            <label for="number_phone">Number Phone</label>
+            <input type="text" class="form-control is-invalid" id="number_phone" name="number_phone" aria-describedby="number_phone" value="{{ old('number_phone') ? old('number_phone') : $familys['number_phone'] }}" required>
+            @error('number_phone')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+            <div id="number_phoneFeedback" class="invalid-feedback">
+                Please provide a valid number.
+            </div>
+        </div>
+            <div class="form-row">
+            <div class="col-md-6 mb-3">
+            <label for="address">Address</label>
+            <input type="text" class="form-control is-invalid" id="address" name="address" aria-describedby="address" value="{{ old('address') ? old('address') : $familys['address'] }}" required>
+            @error('address')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+            <div id="addressFeedback" class="invalid-feedback">
+                Please provide a valid address.
+            </div>
+        </div>
+        </div>
+            <div class="form-row">
+            <div class="col-md-6 mb-3">
+            <label for="email">Email</label>
+            <input type="text" class="form-control is-invalid" id="email" name="email" aria-describedby="email" value="{{ old('email') ? old('email') : $familys['email'] }}" required>
+            @error('email')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+            <div id="emailFeedback" class="invalid-feedback">
+                Please provide a valid email address.
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="form-check">
+            <input class="form-check-input is-invalid" type="checkbox" value="" id="invalidCheck3" aria-describedby="invalidCheck3Feedback" required>
+            <label class="form-check-label" for="invalidCheck3">
+                Agree to terms and conditions
+            </label>
+            <div  id="invalidCheck3Feedback" class="invalid-feedback">
+                You must agree before submitting.
+            </div>
+            </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Submit form</button>
+    </form>
+
+@endsection
+<!-- end section hanya ditulis sekali aja di paling akhir -->
+
+
+10.	Penggunaan Paginate yang berbeda
+AppServiceProvider.php
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Pagination\Paginator;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        Paginator::useBootstrap();
+    }
+}
+
+
+11.	Penambahan Database Familys
+-- Table structure for table `familys`
+--
+
+CREATE TABLE `familys` (
+  `id` int(11) NOT NULL,
+  `first_name` varchar(255) NOT NULL,
+  `last_name` varchar(255) NOT NULL,
+  `number_phone` int(15) NOT NULL,
+  `address` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `familys`
+--
+
+INSERT INTO `familys` (`id`, `first_name`, `last_name`, `number_phone`, `address`, `email`, `created_at`, `updated_at`) VALUES
+(1, 'Gow', 'Swei Lie', 839274678, 'Kesambi', 'gow_sweilie@gmail.com', '2021-10-18 19:55:55', '2021-10-18 19:55:55'),
+(2, 'Gow', 'Ye Lie', 836742965, 'Kanoman', 'gow_yelie@gmail.com', '2021-10-18 13:53:36', '2021-10-18 13:53:36'),
+(3, 'Gow', 'Sin Lie', 847291763, 'Kolektoran', 'gow_sinlie@gmail.com', '2021-10-18 13:58:02', '2021-10-18 13:58:02'),
+(4, 'Gow', 'Kim Lie', 849382761, 'Kesambi', 'gow_kimlie@gmail.com', '2021-10-18 14:00:47', '2021-10-18 14:00:47'),
+(5, 'Gow', 'Beng Lie', 873619367, 'Kalijaga', 'gow_benglie@gmail.com', '2021-10-18 14:01:55', '2021-10-18 14:01:55'),
+(6, 'Gow', 'Chuan Beng', 874624986, 'Kalijaga', 'gow_chuanbeng@gmail.com', '2021-10-18 14:02:34', '2021-10-18 14:02:34'),
+(7, 'Gow', 'Sun Lie', 836962579, 'Jakarta', 'gow_sunlie@gmail.com', '2021-10-18 14:03:18', '2021-10-18 14:03:18'),
+(8, 'Berthiana', 'Susanthy', 839271683, 'Kalijaga', 'berthiana_susanthy@gmail.com', '2021-10-24 16:05:34', '2021-10-24 16:05:34');
+
+
+-- Indexes for table `familys`
+--
+ALTER TABLE `familys`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `last_name` (`last_name`);
+
+--
+
+-- AUTO_INCREMENT for table `familys`
+--
+ALTER TABLE `familys`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+11. Mengubah Tampilan Warna Card Pada index.blade.php dan show.blade.php
+<div class="card border-dark mb-3" style="max-width: 20rem;">
+        <div class="card-header bg-dark text-light">
+                <b>MY FAMILY</b>
+            </div>
+        <div class="card-body bg-dark p-2 text-dark bg-opacity-10">
+
+12. Menambah Groups Family
+@foreach ($group->familys as $familys)
+                <li class="list-group-item"> {{$familys->first_name}} {{$familys->last_name}} </li>
+@endforeach
